@@ -628,9 +628,6 @@ data.head()
 
 # #### Converting some binary variables (Yes/No) to 1/0
 
-# In[111]:
-
-
 # List of variables to map
 
 varlist =  ['Do Not Email', 'Do Not Call']
@@ -645,36 +642,19 @@ data[varlist] = data[varlist].apply(binary_map)
 
 # #### For categorical variables with multiple levels, create dummy features (one-hot encoded)
 
-# In[112]:
-
-
 # Creating a dummy variable for some of the categorical variables and dropping the first one.
 dummy1 = pd.get_dummies(data[['Lead Origin', 'Lead Source', 'Last Activity', 'Specialization','What is your current occupation',
                               'Tags','Lead Quality','City','Last Notable Activity']], drop_first=True)
 dummy1.head()
 
-
-# In[113]:
-
-
 # Adding the results to the master dataframe
 data = pd.concat([data, dummy1], axis=1)
 data.head()
 
-
-# In[114]:
-
-
 data = data.drop(['Lead Origin', 'Lead Source', 'Last Activity', 'Specialization','What is your current occupation','Tags','Lead Quality','City','Last Notable Activity'], axis = 1)
-
-
-# In[115]:
-
 
 data.head()
 
-
-# In[116]:
 
 
 from sklearn.model_selection import train_test_split
@@ -682,34 +662,18 @@ from sklearn.model_selection import train_test_split
 # Putting feature variable to X
 X = data.drop(['Prospect ID','Converted'], axis=1)
 
-
-# In[117]:
-
-
 X.head()
-
-
-# In[118]:
-
 
 # Putting response variable to y
 y = data['Converted']
 
 y.head()
 
-
-# In[119]:
-
-
 # Splitting the data into train and test
 X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.7, test_size=0.3, random_state=100)
 
 
 # ### Step 5: Feature Scaling
-
-# In[120]:
-
-
 from sklearn.preprocessing import StandardScaler
 
 scaler = StandardScaler()
@@ -717,10 +681,6 @@ scaler = StandardScaler()
 X_train[['TotalVisits','Total Time Spent on Website','Page Views Per Visit']] = scaler.fit_transform(X_train[['TotalVisits','Total Time Spent on Website','Page Views Per Visit']])
 
 X_train.head()
-
-
-# In[121]:
-
 
 # Checking the Churn Rate
 Converted = (sum(data['Converted'])/len(data['Converted'].index))*100
@@ -731,9 +691,6 @@ Converted
 
 # ### Feature Selection Using RFE
 
-# In[124]:
-
-
 from sklearn.linear_model import LogisticRegression
 logreg = LogisticRegression()
 
@@ -741,57 +698,26 @@ from sklearn.feature_selection import RFE
 rfe = RFE(logreg, 15)             # running RFE with 15 variables as output
 rfe = rfe.fit(X_train, y_train)
 
-
-# In[125]:
-
-
 rfe.support_
 
-
-# In[126]:
-
-
 list(zip(X_train.columns, rfe.support_, rfe.ranking_))
-
-
-# In[127]:
-
 
 col = X_train.columns[rfe.support_]
 col
 
-
-# In[128]:
-
-
 X_train.columns[~rfe.support_]
-
-
-# In[130]:
-
 
 X_train_sm = X_train[col]
 X_train_sm
-
-
-# In[131]:
-
 
 from sklearn.linear_model import LogisticRegression
 classifier = LogisticRegression(penalty='l2', max_iter=200, solver='lbfgs',random_state = 0 )
 classifier.fit(X_train_sm,y_train)
 
-
-# In[134]:
-
-
 y_train_pred=classifier.predict(X_train_sm)
 
 
 # ##### Creating a dataframe with the actual churn flag and the predicted probabilities
-
-# In[135]:
-
 
 y_train_pred_final = pd.DataFrame({'Converted':y_train.values, 'Converted_prob':y_train_pred})
 y_train_pred_final['Prospect ID'] = y_train.index
@@ -800,17 +726,10 @@ y_train_pred_final.head()
 
 # ##### Creating new column 'predicted' with 1 if Churn_Prob > 0.5 else 0
 
-# In[137]:
-
-
 y_train_pred_final['predicted'] = y_train_pred_final.Converted_prob.map(lambda x: 1 if x > 0.5 else 0)
 
 # Let's see the head
 y_train_pred_final.head()
-
-
-# In[138]:
-
 
 from sklearn import metrics
 
@@ -818,18 +737,10 @@ from sklearn import metrics
 confusion = metrics.confusion_matrix(y_train_pred_final.Converted, y_train_pred_final.predicted )
 print(confusion)
 
-
-# In[ ]:
-
-
 # Predicted     not_churn    churn
 # Actual
-# not_churn        3270      365
-# churn            579       708  
-
-
-# In[139]:
-
+# not_churn        3751     154
+# churn            353       2093     
 
 # Let's check the overall accuracy.
 print(metrics.accuracy_score(y_train_pred_final.Converted, y_train_pred_final.predicted))
@@ -837,48 +748,35 @@ print(metrics.accuracy_score(y_train_pred_final.Converted, y_train_pred_final.pr
 
 # ## Metrics beyond simply accuracy
 
-# In[140]:
-
-
 TP = confusion[1,1] # true positive 
 TN = confusion[0,0] # true negatives
 FP = confusion[0,1] # false positives
 FN = confusion[1,0] # false negatives
 
-
-# In[141]:
-
-
 # Let's see the sensitivity of our logistic regression model
 TP / float(TP+FN)
-
-
-# In[142]:
+#0.8556827473426002
 
 
 # Let us calculate specificity
 TN / float(TN+FP)
-
-
-# In[143]:
+#0.9605633802816902
 
 
 # Calculate false postive rate - predicting churn when customer does not have churned
 print(FP/ float(TN+FP))
-
-
-# In[144]:
+#0.03943661971830986
 
 
 # positive predictive value 
 print (TP / float(TP+FP))
-
-
-# In[ ]:
+#0.9314641744548287
 
 
 # Negative predictive value
 print (TN / float(TN+ FN))
+0.9139863547758285
+
 
 
 # ### Step 9: Plotting the ROC Curve
@@ -888,9 +786,6 @@ print (TN / float(TN+ FN))
 # - It shows the tradeoff between sensitivity and specificity (any increase in sensitivity will be accompanied by a decrease in specificity).
 # - The closer the curve follows the left-hand border and then the top border of the ROC space, the more accurate the test.
 # - The closer the curve comes to the 45-degree diagonal of the ROC space, the less accurate the test.
-
-# In[145]:
-
 
 def draw_roc( actual, probs ):
     fpr, tpr, thresholds = metrics.roc_curve( actual, probs,
@@ -910,113 +805,66 @@ def draw_roc( actual, probs ):
     return None
 
 
-# In[146]:
-
-
 fpr, tpr, thresholds = metrics.roc_curve( y_train_pred_final.Converted, y_train_pred_final.Converted_prob, drop_intermediate = False )
 
-
-# In[147]:
-
-
 draw_roc(y_train_pred_final.Converted, y_train_pred_final.Converted_prob)
-
-
-# In[148]:
 
 
 X_test[['TotalVisits','Total Time Spent on Website','Page Views Per Visit']] = scaler.fit_transform(X_test[['TotalVisits','Total Time Spent on Website','Page Views Per Visit']])
 
 X_train.head()
 
-
-# In[149]:
-
-
 X_test = X_test[col]
 X_test.head()
 
 
-# In[151]:
-
-
 y_test_pred = classifier.predict(X_test)
-
-
-# In[152]:
-
 
 y_test_pred[:10]
 
 
-# In[153]:
-
-
 print(metrics.accuracy_score(y_test, y_test_pred))
+# Accuracy = 91.40653690782226
 
 
-# In[154]:
+# #### Using K-Nearest Neighbours Classification
 
 
 from sklearn.neighbors import KNeighborsClassifier
 classifier1 = KNeighborsClassifier(n_neighbors=5,weights='uniform',metric='minkowski')
 classifier1.fit(X_train_sm,y_train)
 
-
-# In[158]:
-
-
 y_test_pred1 = classifier1.predict(X_test)
-
-
-# In[159]:
-
 
 print(metrics.accuracy_score(y_test, y_test_pred1))
 
+# accuracy=91.44326110907087
 
-# In[163]:
+
+# #### Using Support Vector Machine 
 
 
 from sklearn.svm import SVC
 classifier2 = SVC(kernel = 'rbf',gamma='scale',C = 1.0, random_state = 0)
 classifier2.fit(X_train_sm, y_train)
 
-
-# In[164]:
-
-
 y_test_pred2 = classifier2.predict(X_test)
 
-
-# In[165]:
-
-
 print(metrics.accuracy_score(y_test, y_test_pred2))
+#Accuracy = 91.4799853103195
 
 
-# In[166]:
-
+# ##### Using Random Forest Classification
 
 from sklearn.ensemble import RandomForestClassifier
 classifier3 = RandomForestClassifier(n_estimators=150)
 classifier3.fit(X_train_sm, y_train)
 
-
-# In[167]:
-
-
 y_test_pred3 = classifier3.predict(X_test)
 
-
-# In[168]:
-
-
 print(metrics.accuracy_score(y_test, y_test_pred3))
+#Accuracy= 91.44326110907087
 
-
-# In[ ]:
-
-
-
-
+# End Result 
+# Here in this data set Every model perform exceptionaly very well 
+# With Highest Accuracy rate of SVM classification Model
